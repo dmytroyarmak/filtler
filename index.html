@@ -6,5 +6,89 @@
 </head>
 <body>
   <h1>ImageFilter</h1>
+  <div>
+    <input type="file" id="file">
+    <input type="range" min="1" max="10" id="slider">
+  </div>
+  <div>
+    <canvas id="canvas"></canvas>
+  </div>
+  <script>
+    function setPixel(imageData, x, y, r, g, b, a) {
+      index = (x + y * imageData.width) * 4;
+      imageData.data[index+0] = r;
+      imageData.data[index+1] = g;
+      imageData.data[index+2] = b;
+      imageData.data[index+3] = a;
+    }
+
+    function createImageFromFile (file, onload) {
+      var img = new Image;
+      img.src = URL.createObjectURL(file);
+      img.onload = onload.bind(null, img);
+    }
+
+    function drawImageToCanvas (img, canvas, ctx) {
+      var ctx = canvas.getContext('2d');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx.drawImage(img, 0, 0);
+    }
+
+    function addNoiceToImageData (imageData, intensity) {
+      var i, x, y, r, g, b;
+      for (i = 0; i < 10000*intensity; i++) {
+        x = Math.random() * imageData.width | 0; // |0 to truncate to Int32
+        y = Math.random() * imageData.height | 0;
+        r = Math.random() * 256 | 0;
+        g = Math.random() * 256 | 0;
+        b = Math.random() * 256 | 0;
+        setPixel(imageData, x, y, r, g, b, 255); // 255 opaque
+      }
+      return imageData;
+    }
+
+    function makeNoise () {
+      var imageData = copyImageData(originalImageData);
+      addNoiceToImageData(imageData, slider.valueAsNumber);
+      ctx.putImageData(imageData, 0, 0);
+    }
+
+    function saveOriginalImageData (canvas) {
+      originalImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    }
+
+    function copyImageData(src) {
+      var dst = ctx.createImageData(src.width, src.height);
+      dst.data.set(src.data);
+      return dst;
+    }
+
+    function drawFileToCanvas (file) {
+      createImageFromFile(file, function(img) {
+        drawImageToCanvas(img, canvas);
+        saveOriginalImageData(canvas);
+        makeNoise()
+      });
+    }
+
+    function handleFileSelect (evt) {
+      var file = evt.target.files[0];
+      drawFileToCanvas(file);
+    }
+
+    function handleSliderChange (evt) {
+      makeNoise();
+    }
+
+    var slider = document.getElementById('slider');
+    var file = document.getElementById('file');
+    var canvas = document.getElementById('canvas');
+    var ctx = canvas.getContext('2d');
+    var originalImageData;
+
+    file.addEventListener('change', handleFileSelect, false);
+    slider.addEventListener('input', handleSliderChange, false);
+  </script>
 </body>
 </html>
