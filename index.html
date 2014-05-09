@@ -12,6 +12,7 @@
     <select id="filter">
       <option value="noise">Noise</option>
       <option value="gaussianBlur">Gaussian Blur</option>
+      <option value="median">Median</option>
     </select>
   </div>
   <div>
@@ -73,7 +74,8 @@
 
     var filterWorkers = {
       noise: new Worker('noise.js'),
-      gaussianBlur: new Worker('gaussian_blur.js')
+      gaussianBlur: new Worker('gaussian_blur.js'),
+      median: new Worker('median.js')
     };
 
     var slider = document.getElementById('slider');
