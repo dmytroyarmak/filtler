@@ -9,13 +9,15 @@
   <div>
     <input type="file" id="file">
     <input type="range" min="1" max="10" id="slider">
+    <select id="filter">
+      <option value="noise">Noise</option>
+      <option value="gaussianBlur">Gaussian Blur</option>
+    </select>
   </div>
   <div>
     <canvas id="canvas"></canvas>
   </div>
   <script>
-
-
     function createImageFromFile (file, onload) {
       var img = new Image;
       img.src = URL.createObjectURL(file);
@@ -29,12 +31,13 @@
       ctx.drawImage(img, 0, 0);
     }
 
-    function makeNoise () {
-      noiseWorker.addEventListener('message', function onMessage(e) {
+    function applyFilter () {
+      var worker = filterWorkers[filterSelect.value];
+      worker.addEventListener('message', function onMessage(e) {
         ctx.putImageData(e.data, 0, 0);
-        noiseWorker.removeEventListener('message', onMessage, false)
+        worker.removeEventListener('message', onMessage, false)
       }, false);
-      noiseWorker.postMessage({imageData: originalImageData, intensity: slider.valueAsNumber});
+      worker.postMessage({imageData: originalImageData, intensity: slider.valueAsNumber});
     }
 
     function saveOriginalImageData (canvas) {
@@ -51,7 +54,7 @@
       createImageFromFile(file, function(img) {
         drawImageToCanvas(img, canvas);
         saveOriginalImageData(canvas);
-        makeNoise()
+        applyFilter()
       });
     }
 
@@ -61,18 +64,28 @@
     }
 
     function handleSliderChange (evt) {
-      makeNoise();
+      applyFilter();
     }
 
-    var noiseWorker = new Worker('noise.js');
+    function handleFilterSelectChange (evt) {
+      applyFilter();
+    }
+
+    var filterWorkers = {
+      noise: new Worker('noise.js'),
+      gaussianBlur: new Worker('gaussian_blur.js')
+    };
+
     var slider = document.getElementById('slider');
     var file = document.getElementById('file');
+    var filterSelect = document.getElementById('filter');
     var canvas = document.getElementById('canvas');
     var ctx = canvas.getContext('2d');
     var originalImageData;
 
     file.addEventListener('change', handleFileSelect, false);
-    slider.addEventListener('input', handleSliderChange, false);
+    slider.addEventListener('change', handleSliderChange, false);
+    filterSelect.addEventListener('change', handleFilterSelectChange, false);
   </script>
 </body>
 </html>
